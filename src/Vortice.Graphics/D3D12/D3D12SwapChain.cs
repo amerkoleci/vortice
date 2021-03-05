@@ -1,53 +1,44 @@
 // Copyright (c) Amer Koleci and contributors.
 // Distributed under the MIT license. See the LICENSE file in the project root for more information.
 
-using TerraFX.Interop;
-using static TerraFX.Interop.DXGI_SWAP_CHAIN_FLAG;
-using static TerraFX.Interop.DXGI_SWAP_EFFECT;
-using static TerraFX.Interop.Windows;
-using static Vortice.Graphics.D3D12.D3D12Utils;
 using System;
+using Vortice.DXGI;
+using static Vortice.Graphics.D3D12.D3D12Utils;
 
 namespace Vortice.Graphics.D3D12
 {
     internal unsafe class D3D12SwapChain : SwapChain
     {
-        private IDXGISwapChain3* _handle;
+        private readonly IDXGISwapChain3 _handle;
 
         public D3D12SwapChain(D3D12GraphicsDevice device, IntPtr windowHandle, in SwapChainDescriptor descriptor)
             : base(device, descriptor)
         {
-            using ComPtr<IDXGISwapChain1> swapChain = null;
-
-            var swapChainDesc = new DXGI_SWAP_CHAIN_DESC1
+            var swapChainDesc = new SwapChainDescription1
             {
-                Width = (uint)descriptor.Width,
-                Height = (uint)descriptor.Height,
+                Width = descriptor.Width,
+                Height = descriptor.Height,
                 Format = ToDXGISwapChainFormat(descriptor.ColorFormat),
-                BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+                Usage = Usage.RenderTargetOutput,
                 BufferCount = 2,
-                SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
-                SampleDesc = new DXGI_SAMPLE_DESC(count: 1, quality: 0),
-                Flags = D3D12GraphicsDevice.IsTearingSupported ? (uint)DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u
+                SwapEffect = SwapEffect.FlipDiscard,
+                SampleDescription = new SampleDescription(1, 0),
+                Flags = D3D12GraphicsDevice.IsTearingSupported ? SwapChainFlags.AllowTearing : SwapChainFlags.None
             };
 
-            var fullscreenDesc = new DXGI_SWAP_CHAIN_FULLSCREEN_DESC
+            var fullscreenDesc = new SwapChainFullscreenDescription
             {
-                Windowed = descriptor.IsFullscreen ? FALSE : TRUE
+                Windowed = !descriptor.IsFullscreen
             };
 
-            ThrowIfFailed(D3D12GraphicsDevice.DxgiFactory->CreateSwapChainForHwnd(
-                (IUnknown*)device.DirectQueue,
-                windowHandle,
-                &swapChainDesc,
-                pFullscreenDesc: &fullscreenDesc,
-                pRestrictToOutput: null,
-                swapChain.GetAddressOf()
-            ));
+            using (IDXGISwapChain1 tempSwapChain = D3D12GraphicsDevice.DxgiFactory.CreateSwapChainForHwnd(
+                device.DirectQueue, windowHandle, swapChainDesc, fullscreenDesc))
+            {
+                D3D12GraphicsDevice.DxgiFactory.MakeWindowAssociation(windowHandle, WindowAssociationFlags.IgnoreAltEnter);
 
-            IDXGISwapChain3* swapChain3;
-            ThrowIfFailed(swapChain.Get()->QueryInterface(__uuidof<IDXGISwapChain3>(), (void**)&swapChain3));
-            _handle = swapChain3;
+                _handle = tempSwapChain.QueryInterface<IDXGISwapChain3>();
+            }
+
             AfterReset();
         }
 
@@ -55,23 +46,21 @@ namespace Vortice.Graphics.D3D12
         {
             if (disposing)
             {
-                _handle->Release();
-                _handle = null;
+                _handle.Dispose();
             }
         }
 
         public override void Present()
         {
-            ThrowIfFailed(_handle->Present(SyncInterval: 1, Flags: 0));
+            _handle.Present(0, PresentFlags.None).CheckError();
         }
 
         private void AfterReset()
         {
-            DXGI_SWAP_CHAIN_DESC1 desc;
-            ThrowIfFailed(_handle->GetDesc1(&desc));
+            SwapChainDescription1 desc = _handle.Description1;
 
-            Width = (int)desc.Width;
-            Height = (int)desc.Height;
+            Width = desc.Width;
+            Height = desc.Height;
         }
     }
 }
