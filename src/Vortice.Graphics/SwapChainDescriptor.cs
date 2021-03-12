@@ -11,7 +11,7 @@ namespace Vortice.Graphics
         public int Height { get; }
         public TextureFormat ColorFormat { get; }
         public TextureFormat DepthStencilFormat { get; }
-        public PresentMode PresentMode { get; }
+        public bool VerticalSync { get; }
         public bool IsFullscreen { get; }
     }
 }

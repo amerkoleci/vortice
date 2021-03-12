@@ -38,7 +38,7 @@ namespace Vortice
         /// <returns>Return true if blocking otherwise false.</returns>
         public abstract bool Run(Action loadAction, Action tickAction);
 
-        private static GraphicsDevice? CreateGraphicsDevice()
+        private GraphicsDevice? CreateGraphicsDevice()
         {
             //return GraphicsDevice.CreateSystemDefault(BackendType.Vulkan);
             if (RuntimePlatform.PlatformType == PlatformType.Windows)
@@ -46,11 +46,11 @@ namespace Vortice
                 if (GraphicsDevice.IsBackendSupported(BackendType.Direct3D12))
                 {
                     GraphicsDevice.PreferredBackendType = BackendType.Direct3D12;
-                    return GraphicsDevice.CreateSystemDefault();
+                    return GraphicsDevice.CreateSystemDefault(GameWindow!.Handle);
                 }
             }
 
-            return GraphicsDevice.CreateSystemDefault();
+            return GraphicsDevice.CreateSystemDefault(GameWindow!.Handle);
         }
     }
 }

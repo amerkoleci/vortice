@@ -5,21 +5,24 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants>$(DefineConstants);ENABLE_VALIDATION</DefineConstants>
     <DefineConstants Condition="'$(ExcludeVulkan)' == 'true'">$(DefineConstants);EXCLUDE_VULKAN_BACKEND</DefineConstants>
-    <DefineConstants Condition="'$(ExcludeD3D12)' == 'true'">$(DefineConstants);EXCLUDE_D3D12_BACKEND</DefineConstants>
   </PropertyGroup>
 
+
   <ItemGroup>
-    <Compile Remove="D3D12/**/*" Condition="'$(ExcludeD3D12)' == 'true'" />
+    <!-- Windows -->
+    <Content Include="$(MSBuildThisFileDirectory)native\win-x64\vgpu.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>runtimes/win-x64/native</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="Vulkan/**/*" Condition="'$(ExcludeVulkan)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Vortice.Vulkan" Version="1.3.1" Condition="'$(ExcludeVulkan)' != 'true'" />
-    <PackageReference Include="Vortice.Direct3D12" Version="1.9.7-beta" Condition="'$(ExcludeD3D12)' != 'true'" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Vortice.Core\Vortice.Core.csproj" />
   </ItemGroup>
 
 </Project>

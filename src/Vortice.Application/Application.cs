@@ -51,7 +51,7 @@ namespace Vortice
             Input = Services.GetRequiredService<InputManager>();
 
             // Create main swap chain
-            SwapChain = GraphicsDevice.CreateSwapChain(Context.GameWindow!.Handle, new SwapChainDescriptor());
+            //SwapChain = GraphicsDevice.CreateSwapChain(Context.GameWindow!.Handle, new SwapChainDescriptor());
         }
 
         public GameContext Context { get; }
@@ -61,7 +61,7 @@ namespace Vortice
 
         public InputManager? Input { get; }
 
-        public SwapChain? SwapChain { get; }
+        //public SwapChain? SwapChain { get; }
 
         public virtual void Dispose()
         {
@@ -70,7 +70,7 @@ namespace Vortice
                 gameSystem.Dispose();
             }
 
-            SwapChain!.Dispose();
+            //SwapChain!.Dispose();
             GraphicsDevice.Dispose();
             GC.SuppressFinalize(this);
         }
@@ -116,8 +116,8 @@ namespace Vortice
 
         public void Tick()
         {
-            //if (!vgpuBeginFrame(GraphicsDevice))
-            //    return;
+            if (!GraphicsDevice.BeginFrame())
+                return;
 
             //var renderPass = new RenderPassDescription();
             //renderPass.colorAttachments0.clearColor = new Color4(1.0f, 0.0f, 1.0f);
@@ -125,8 +125,8 @@ namespace Vortice
             //renderPass.colorAttachments0.texture = vgpuGetBackbufferTexture(GraphicsDevice);
             //vgpuCmdBeginRenderPass(GraphicsDevice, renderPass);
             //vgpuCmdEndRenderPass(GraphicsDevice);
-            SwapChain.Present();
-            //vgpuEndFrame(GraphicsDevice);
+            //SwapChain.Present();
+            GraphicsDevice.EndFrame();
         }
 
         private void InitializeBeforeRun()

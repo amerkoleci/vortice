@@ -14,6 +14,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\Vortice.Graphics\native\win-x64\vgpu.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\Vortice.Application\Vortice.Application.csproj" />
   </ItemGroup>
 

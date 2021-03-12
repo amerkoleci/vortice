@@ -10,16 +10,16 @@ namespace Vortice.Graphics
         /// </summary>
         Default,
         /// <summary>
-        /// Direct3D 12 backend.
-        /// </summary>
-        Direct3D12,
-        /// <summary>
         /// Vulkan backend.
         /// </summary>
         Vulkan,
         /// <summary>
-        /// Null renderer.
+        /// Direct3D 12 backend.
         /// </summary>
-        Null,
+        Direct3D12,
+        /// <summary>
+        /// Direct3D 11.1+ backend.
+        /// </summary>
+        Direct3D11
     }
 }

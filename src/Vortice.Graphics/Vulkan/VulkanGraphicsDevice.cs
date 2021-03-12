@@ -245,7 +245,7 @@ namespace Vortice.Graphics.Vulkan
             _capabilities.AdapterName = properties.GetDeviceName();
         }
 
-        protected override SwapChain CreateSwapChainCore(IntPtr windowHandle, in SwapChainDescriptor descriptor) => throw new NotImplementedException();
+        //protected override SwapChain CreateSwapChainCore(IntPtr windowHandle, in SwapChainDescriptor descriptor) => throw new NotImplementedException();
 
         #region Debug Messenger Callback
 

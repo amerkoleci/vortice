@@ -3,10 +3,11 @@
 
 using System;
 using System.Runtime.InteropServices;
+using static Vortice.Graphics.VGPU;
 
 namespace Vortice.Graphics
 {
-    public abstract class GraphicsDevice : IDisposable
+    public class GraphicsDevice : IDisposable
     {
         public const string EnableValidationSwitchName = "Vortice.Graphics.EnableValidation";
         public const string EnableGPUBasedValidationSwitchName = "Vortice.Graphics.EnableGPUBasedValidation";
@@ -33,6 +34,13 @@ namespace Vortice.Graphics
             }
         }
 
+        private GraphicsDevice(IntPtr handle)
+        {
+            Handle = handle;
+        }
+
+        public IntPtr Handle { get; }
+
         public static bool EnableValidation { get; }
         public static bool EnableGPUBasedValidation { get; }
         public static BackendType PreferredBackendType { get; set; } = BackendType.Default;
@@ -41,7 +49,7 @@ namespace Vortice.Graphics
         {
         }
 
-        public abstract GraphicsDeviceCaps Capabilities { get; }
+        public virtual GraphicsDeviceCaps Capabilities { get; }
 
         /// <inheritdoc />
         public void Dispose()
@@ -54,57 +62,60 @@ namespace Vortice.Graphics
         /// <param name="disposing">
         /// <c>true</c> if the method was called from <see cref="Dispose()" />; otherwise, <c>false</c>.
         /// </param>
-        protected abstract void Dispose(bool disposing);
+        protected virtual void Dispose(bool disposing)
+        {
+        }
 
-        public static GraphicsDevice? CreateSystemDefault()
+        public bool BeginFrame()
+        {
+            return vgpuBeginFrame(Handle);
+        }
+
+        public void EndFrame()
+        {
+            vgpuEndFrame(Handle);
+        }
+
+        public static GraphicsDevice? CreateSystemDefault(IntPtr windowHandle)
         {
             if (PreferredBackendType == BackendType.Default)
             {
                 PreferredBackendType = GetDefaultPlatformBackend();
             }
 
-            switch (PreferredBackendType)
+            // Setup graphics.
+            vgpu_set_log_callback(GPULogCallback, IntPtr.Zero);
+
+            GPUDeviceInfo info = new GPUDeviceInfo
             {
-#if !EXCLUDE_VULKAN_BACKEND
-                case BackendType.Vulkan:
-                    return new Vulkan.VulkanGraphicsDevice(GraphicsAdapterType.DiscreteGPU);
-#endif
+                PowerPreference = PowerPreference.HighPerformance,
+                Flags = GPUDeviceFlags.None,
+                SwapchainInfo = new SwapchainInfo
+                {
+                    WindowHandle = windowHandle,
+                    ColorFormat = TextureFormat.BGRA8Unorm,
+                }
+            };
 
-#if !EXCLUDE_D3D12_BACKEND
-                case BackendType.Direct3D12:
-                    return new D3D12.D3D12GraphicsDevice();
-#endif
+            var device = VGPU.vgpuCreateDevice(BackendType.Direct3D11, info);
 
-                default:
-                    return new Null.NullGraphicsDevice();
-            }
+            return new GraphicsDevice(device);
         }
 
-        public static bool IsBackendSupported(BackendType backend)
+        public static bool IsBackendSupported(BackendType type)
         {
-            if (backend == BackendType.Default)
+            if (type == BackendType.Default)
             {
-                backend = GetDefaultPlatformBackend();
+                type = GetDefaultPlatformBackend();
             }
 
-            switch (backend)
-            {
-                case BackendType.Null:
-                    return true;
+            return vgpu_is_backend_supported(type);
+        }
 
-#if !EXCLUDE_VULKAN_BACKEND
-                case BackendType.Vulkan:
-                    return Vulkan.VulkanGraphicsDevice.IsSupported();
-#endif
-
-#if !EXCLUDE_D3D12_BACKEND
-                case BackendType.Direct3D12:
-                    return D3D12.D3D12GraphicsDevice.IsSupported();
-#endif
-
-                default:
-                    return false;
-            }
+        private static void GPULogCallback(IntPtr userData, GPULogLevel level, string message)
+        {
+            Console.WriteLine($"{level}: {message}");
+            System.Diagnostics.Debug.WriteLine($"{level}: {message}");
         }
 
         /// <summary>
@@ -125,7 +136,7 @@ namespace Vortice.Graphics
                     return BackendType.Vulkan;
                 }
 
-                return BackendType.Null;
+                return BackendType.Direct3D11;
             }
             //else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             //{
@@ -137,14 +148,14 @@ namespace Vortice.Graphics
                 return BackendType.Vulkan;
             }
 
-            return BackendType.Null;
+            return BackendType.Vulkan;
         }
 
-        public SwapChain CreateSwapChain(IntPtr windowHandle, in SwapChainDescriptor descriptor)
-        {
-            return CreateSwapChainCore(windowHandle, descriptor);
-        }
+        //public SwapChain CreateSwapChain(IntPtr windowHandle, in SwapChainDescriptor descriptor)
+        //{
+        //    return CreateSwapChainCore(windowHandle, descriptor);
+        //}
 
-        protected abstract SwapChain CreateSwapChainCore(IntPtr windowHandle, in SwapChainDescriptor descriptor);
+        //protected abstract SwapChain CreateSwapChainCore(IntPtr windowHandle, in SwapChainDescriptor descriptor);
     }
 }
